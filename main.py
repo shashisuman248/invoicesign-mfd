@@ -828,7 +828,7 @@ async def verify_payment(data: dict, current_user=Depends(get_current_user), db:
         from datetime import datetime, timedelta
         plan_days = {"monthly": 30, "quarterly": 90, "yearly": 365}
         days = plan_days.get(data.get("plan", "monthly"), 30)
-        user = db.query(User).filter(User.email == current_user["email"]).first()
+        user = db.query(User).filter(User.email == current_user.email).first()
         user.is_active = True
         user.subscription_end = datetime.utcnow() + timedelta(days=days)
         db.commit()
