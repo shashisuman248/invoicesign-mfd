@@ -9,6 +9,30 @@ import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment
 from openpyxl.utils import get_column_letter
 from PIL import Image
+import razorpay
+import os
+
+RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID")
+RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET")
+rzp_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
+import razorpay
+import os
+
+RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID")
+RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET")
+rzp_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
+import razorpay
+import os
+
+RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID")
+RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET")
+rzp_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
+import razorpay
+import os
+
+RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID")
+RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET")
+rzp_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
 import numpy as np
 
 app = FastAPI(title="InvoiceSign MFD")
@@ -768,3 +792,39 @@ def activate_subscription(
     user.subscription_end = current_end + timedelta(days=30 * months)
     db.commit()
     return {"email": email, "subscription_end": user.subscription_end.isoformat()}
+@app.post("/create-order")
+async def create_order(plan: str, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+    plans = {
+        "monthly": 24900,    # ₹249 in paise
+        "quarterly": 64900,  # ₹649 in paise
+        "yearly": 229900     # ₹2299 in paise
+    }
+    if plan not in plans:
+        raise HTTPException(status_code=400, detail="Invalid plan")
+    
+    order = rzp_client.order.create({
+        "amount": plans[plan],
+        "currency": "INR",
+        "payment_capture": 1
+    })
+    return {"order_id": order["id"], "amount": plans[plan], "key": RAZORPAY_KEY_ID}
+
+@app.post("/verify-payment")
+async def verify_payment(data: dict, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+    try:
+        rzp_client.utility.verify_payment_signature({
+            "razorpay_order_id": data["razorpay_order_id"],
+            "razorpay_payment_id": data["razorpay_payment_id"],
+            "razorpay_signature": data["razorpay_signature"]
+        })
+        # Activate user subscription
+        from datetime import datetime, timedelta
+        plan_days = {"monthly": 30, "quarterly": 90, "yearly": 365}
+        days = plan_days.get(data.get("plan", "monthly"), 30)
+        user = db.query(User).filter(User.email == current_user["email"]).first()
+        user.is_active = True
+        user.subscription_end = datetime.utcnow() + timedelta(days=days)
+        db.commit()
+        return {"status": "success"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="Payment verification failed")
