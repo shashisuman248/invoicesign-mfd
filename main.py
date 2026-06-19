@@ -153,8 +153,8 @@ def stamp_pdf(pdf_path, output_path, sig_path, signatory_name, designation, pan=
     is_cams = pw > 650
 
     if is_cams:
-        sig_rect = fitz.Rect(38, 575, 220, 643)
-        page.insert_image(sig_rect, filename=clean_sig)
+        sig_rect = fitz.Rect(30, 560, 250, 650)
+        page.insert_image(sig_rect, filename=clean_sig, keep_proportion=True, overlay=True)
     else:
         page.draw_rect(fitz.Rect(425, 635, 570, 762), color=(1, 1, 1), fill=(1, 1, 1))
         page.insert_text((430, 648), signatory_name, fontsize=9, fontname="helv", color=(0, 0, 0))
