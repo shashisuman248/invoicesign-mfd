@@ -780,4 +780,4 @@ async def verify_payment(data: dict, current_user=Depends(get_current_user), db:
         db.commit()
         return {"status": "success"}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Activation failed: {str(e)}")S
+        raise HTTPException(status_code=500, detail=f"Activation failed: {str(e)}")
