@@ -58,8 +58,12 @@ def make_transparent(sig_path):
     r = arr[:,:,0].astype(int)
     g = arr[:,:,1].astype(int)
     b = arr[:,:,2].astype(int)
-    is_ink = (b - r > 20) | ((r < 150) & (g < 150) & (b < 150))
-    arr[:,:,3] = np.where(is_ink, 255, 0).astype(np.uint8)
+    # White/near-white background ko transparent karo
+    is_white = (r > 200) & (g > 200) & (b > 200)
+    # Near-white greys bhi transparent
+    is_light = (r > 180) & (g > 180) & (b > 180) & (abs(r - g) < 30) & (abs(g - b) < 30)
+    is_background = is_white | is_light
+    arr[:,:,3] = np.where(is_background, 0, 255).astype(np.uint8)
     clean_sig = Image.fromarray(arr)
     clean_path = sig_path + "_clean.png"
     clean_sig.save(clean_path)
