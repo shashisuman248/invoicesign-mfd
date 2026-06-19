@@ -711,7 +711,11 @@ def register(req: RegisterRequest, db: Session = Depends(get_db)):
     existing = db.query(User).filter(User.email == req.email).first()
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered!")
-    user = User(email=req.email, hashed_password=hash_password(req.password))
+    user = User(
+        email=req.email,
+        hashed_password=hash_password(req.password),
+        subscription_end=datetime.utcnow() + timedelta(days=2)
+    )
     db.add(user)
     db.commit()
     token = create_token(req.email)
