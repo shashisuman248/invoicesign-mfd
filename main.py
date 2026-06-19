@@ -620,9 +620,15 @@ async def fill_karvy_excel(
     amc_col = headers.get("AMC")
 
     keyword_map = {
-        "NIPPON": "NIMF", "CANARA": "CANBANK", "CANBANK": "CANBANK",
-        "UTI": "UTI", "MIRAE": "MIRAE", "EDELWEISS": "EDELWEISS",
-        "INVESCO": "INVESCO", "MOTILAL": "MOTILAL", "AXIS": "AXIS", "PGIM": "PGIM",
+        "NIPPON": "NIMF", "NIMF": "NIMF",
+        "CANARA": "CANBANK", "CANBANK": "CANBANK", "ROBECO": "CANBANK",
+        "UTI": "UTI",
+        "MIRAE": "MIRAE",
+        "EDELWEISS": "EDELWEISS",
+        "INVESCO": "INVESCO",
+        "MOTILAL": "MOTILAL", "OSWAL": "MOTILAL",
+        "AXIS": "AXIS",
+        "PGIM": "PGIM",
     }
 
     filled = 0
