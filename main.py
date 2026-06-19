@@ -46,8 +46,9 @@ def make_transparent(sig_path):
     g = arr[:,:,1].astype(int)
     b = arr[:,:,2].astype(int)
     # White/near-white background ko transparent karo
-    is_background = (r > 150) & (g > 150) & (b > 150) & (abs(r - g) < 40) & (abs(g - b) < 40) & (abs(r - b) < 40)
-    arr[:,:,3] = np.where(is_background, 0, 255).astype(np.uint8)
+    brightness = (r + g + b) / 3
+    alpha = np.clip((180 - brightness) * 3, 0, 255).astype(np.uint8)
+    arr[:,:,3] = alpha
     clean_sig = Image.fromarray(arr)
     clean_path = sig_path + "_clean.png"
     clean_sig.save(clean_path)
@@ -128,7 +129,7 @@ def stamp_pdf(pdf_path, output_path, sig_path, signatory_name, designation, pan=
     is_cams = pw > 650
 
     if is_cams:
-        sig_rect = fitz.Rect(30, 560, 250, 650)
+        sig_rect = fitz.Rect(20, 540, 300, 670)
         page.insert_image(sig_rect, filename=clean_sig, keep_proportion=True, overlay=True)
     else:
         page.draw_rect(fitz.Rect(425, 635, 570, 762), color=(1, 1, 1), fill=(1, 1, 1))
