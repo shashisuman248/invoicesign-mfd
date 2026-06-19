@@ -733,6 +733,18 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
 
 
 @app.get("/auth/me")
+@app.post("/auth/change-password")
+def change_password(data: dict, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+    old_password = data.get("old_password", "")
+    new_password = data.get("new_password", "")
+    if not verify_password(old_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="Current password is incorrect!")
+    if len(new_password) < 6:
+        raise HTTPException(status_code=400, detail="New password must be at least 6 characters!")
+    current_user.hashed_password = hash_password(new_password)
+    db.add(current_user)
+    db.commit()
+    return {"status": "success", "message": "Password changed successfully!"}
 def me(current_user: User = Depends(get_current_user)):
     return {
         "email": current_user.email,
