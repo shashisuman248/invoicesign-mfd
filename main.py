@@ -481,7 +481,7 @@ def extract_karvy_pdf_data(pdf_bytes: bytes, filename: str) -> dict:
     except Exception:
         return {}
 
-    inv_match = re.search(r'Inv serial No\.?\s*[:\s]+([A-Z0-9/\-]+)', text, re.IGNORECASE)
+    inv_match = re.search(r'Inv serial No\.?\s*:\s*([A-Z0-9/\-]+)', text, re.IGNORECASE)
     date_match = re.search(r'Date\s*:\s*(\d{1,2}/\d{1,2}/\d{4})', text, re.IGNORECASE)
 
     prefix = filename.split('_')[0].upper()
