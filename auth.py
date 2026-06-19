@@ -6,7 +6,7 @@ from jose import JWTError, jwt
 from datetime import datetime, timedelta
 import os
 
-DATABASE_URL = "sqlite:///./invoicesign.db"
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./invoicesign.db")
 SECRET_KEY = "invoicesign-mfd-secret-2026"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_DAYS = 7
