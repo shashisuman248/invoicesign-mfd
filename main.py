@@ -14,33 +14,35 @@ from PIL import Image
 import numpy as np
 import razorpay
 from datetime import datetime, timedelta
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+import urllib.request as _urllib_request
 
 # ─── Email Config ─────────────────────────────
-GMAIL_USER = os.getenv("GMAIL_USER")
-GMAIL_APP_PASSWORD = os.getenv("GMAIL_APP_PASSWORD")
+SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
+NOTIFY_EMAIL = os.getenv("GMAIL_USER", "sarenterpriseszep@gmail.com")
 
 def send_signup_notification(new_user_email: str):
     try:
-        msg = MIMEMultipart()
-        msg["From"] = GMAIL_USER
-        msg["To"] = GMAIL_USER
-        msg["Subject"] = f"🆕 New Signup — MFDInvoice"
-        body = f"""
-New user signed up on MFDInvoice!
-
-Email: {new_user_email}
-Time: {datetime.utcnow().strftime("%d %b %Y, %I:%M %p")} UTC
-Trial: 2 days (expires {(datetime.utcnow() + timedelta(days=2)).strftime("%d %b %Y")})
-
-Follow up on WhatsApp or email to convert!
-        """
-        msg.attach(MIMEText(body, "plain"))
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-            server.login(GMAIL_USER, GMAIL_APP_PASSWORD)
-            server.send_message(msg)
+        import json as _json
+        data = {
+            "personalizations": [{"to": [{"email": NOTIFY_EMAIL}]}],
+            "from": {"email": NOTIFY_EMAIL, "name": "MFDInvoice"},
+            "subject": "New Signup on MFDInvoice",
+            "content": [{
+                "type": "text/plain",
+                "value": f"New user signed up!\n\nEmail: {new_user_email}\nTime: {datetime.utcnow().strftime('%d %b %Y, %I:%M %p')} UTC\nTrial expires: {(datetime.utcnow() + timedelta(days=2)).strftime('%d %b %Y')}\n\nFollow up to convert!"
+            }]
+        }
+        req = _urllib_request.Request(
+            "https://api.sendgrid.com/v3/mail/send",
+            data=_json.dumps(data).encode("utf-8"),
+            headers={
+                "Authorization": f"Bearer {SENDGRID_API_KEY}",
+                "Content-Type": "application/json"
+            },
+            method="POST"
+        )
+        _urllib_request.urlopen(req)
+        print(f"Signup notification sent for {new_user_email}")
     except Exception as e:
         print(f"Email notification failed: {e}")
 
