@@ -14,6 +14,35 @@ from PIL import Image
 import numpy as np
 import razorpay
 from datetime import datetime, timedelta
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
+# ─── Email Config ─────────────────────────────
+GMAIL_USER = os.getenv("GMAIL_USER")
+GMAIL_APP_PASSWORD = os.getenv("GMAIL_APP_PASSWORD")
+
+def send_signup_notification(new_user_email: str):
+    try:
+        msg = MIMEMultipart()
+        msg["From"] = GMAIL_USER
+        msg["To"] = GMAIL_USER
+        msg["Subject"] = f"🆕 New Signup — MFDInvoice"
+        body = f"""
+New user signed up on MFDInvoice!
+
+Email: {new_user_email}
+Time: {datetime.utcnow().strftime("%d %b %Y, %I:%M %p")} UTC
+Trial: 2 days (expires {(datetime.utcnow() + timedelta(days=2)).strftime("%d %b %Y")})
+
+Follow up on WhatsApp or email to convert!
+        """
+        msg.attach(MIMEText(body, "plain"))
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+            server.login(GMAIL_USER, GMAIL_APP_PASSWORD)
+            server.send_message(msg)
+    except Exception as e:
+        print(f"Email notification failed: {e}")
 
 # ─── Razorpay ─────────────────────────────────
 RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID")
@@ -719,7 +748,9 @@ def register(req: RegisterRequest, db: Session = Depends(get_db)):
     db.add(user)
     db.commit()
     token = create_token(req.email)
-    return {"token": token, "email": req.email, "subscribed": False, "subscription_end": None}
+    # Send signup notification
+    send_signup_notification(req.email)
+    return {"token": token, "email": req.email, "subscribed": is_subscribed(user), "subscription_end": user.subscription_end.isoformat() if user.subscription_end else None}
 
 
 @app.post("/auth/login")
@@ -737,6 +768,14 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
 
 
 @app.get("/auth/me")
+def me(current_user: User = Depends(get_current_user)):
+    return {
+        "email": current_user.email,
+        "subscribed": is_subscribed(current_user),
+        "subscription_end": current_user.subscription_end.isoformat() if current_user.subscription_end else None
+    }
+
+
 @app.post("/auth/change-password")
 def change_password(data: dict, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
     old_password = data.get("old_password", "")
@@ -749,12 +788,6 @@ def change_password(data: dict, current_user=Depends(get_current_user), db: Sess
     db.add(current_user)
     db.commit()
     return {"status": "success", "message": "Password changed successfully!"}
-def me(current_user: User = Depends(get_current_user)):
-    return {
-        "email": current_user.email,
-        "subscribed": is_subscribed(current_user),
-        "subscription_end": current_user.subscription_end.isoformat() if current_user.subscription_end else None
-    }
 
 
 @app.get("/auth/activate")
